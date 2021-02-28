@@ -8,13 +8,14 @@ import SwiftUI
 
 #if os(macOS)
 public struct TextView: NSViewRepresentable {
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, regexController: [RegExResults]) {
+    
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
-        self.regexController = regexController
+        self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false)
     }
     
-    var regexController: [RegExResults]
+    var regexResults: [RegExResults]
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
     
@@ -51,14 +52,14 @@ public struct TextView: NSViewRepresentable {
         textView.textColor = NSColor.labelColor
         
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
-        for result in regexController {
+        for result in regexResults {
             // FIXME: Να μπεί έλεγχος ότι το result.range δεν είναι μεγαλύτερο απο το range του text του textView.
             if result.isFullMatch {
                 textView.textStorage?.setAttributes(yellowAttr, range: result.range)
                 // Δημιουργεί ένα animation όταν βρεθεί το fullMatch
                 if textViewIsEditing == false {
                     // Για λόγους πόρων συστήματος έβαλα περιορισμούς στο πότε θα γίνεται το animation
-                    if result.match.utf16.count > 2  && regexController.count < 10 {
+                    if result.match.utf16.count > 2  && regexResults.count < 10 {
                         textView.showFindIndicator(for: result.range)
                     }
                 }
@@ -107,13 +108,13 @@ public struct TextView: NSViewRepresentable {
 #else
 public struct TextView: UIViewRepresentable {
     
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, regexController: [RegExResults]) {
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
-        self.regexController = regexController
+        self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false)
     }
     
-    var regexController: [RegExResults]
+    var regexResults: [RegExResults]
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
     
@@ -145,7 +146,7 @@ public struct TextView: UIViewRepresentable {
         textView.textColor = UIColor.label
         
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
-        for result in regexController {
+        for result in regexResults {
             // FIXME: Να μπεί έλεγχος ότι το result.range δεν είναι μεγαλύτερο απο το range του text του textView.
             if result.isFullMatch {
                 textView.textStorage.setAttributes(yellowAttr, range: result.range)
@@ -190,30 +191,9 @@ public struct TextView: UIViewRepresentable {
 
 
 // MARK: CONTROLLER
-public class RegexController: ObservableObject {
-    /// Το κείμενο του Regex
-    @Published var regExText: String = "" {
-        willSet {
-            results = regExResults(regExText: newValue, targetText: targetText, caseSensitive: caseSensitive)
-        }
-    }
-    /// Το κείμενο που θα ψαξει το Regex
-    @Published var targetText = ""{
-        willSet {
-            results = regExResults(regExText: regExText, targetText: newValue, caseSensitive: caseSensitive)
-        }
-    }
-    /// Η λίστα με τα αποτελέσματα απο την εύρεση του Regex
-    @Published var results = [RegExResults]()
-    /// Αν θα αναζητά αποτελέσματα που ταιριάζουν τα κεφαλαία-μικρά ή όχι.
-    @AppStorage("caseSensitive") var caseSensitive: Bool = false {
-        willSet {
-            results = regExResults(regExText: regExText, targetText: targetText, caseSensitive: newValue)
-        }
-    }
-    
-    // MARK: REGEX FUNCTION
-    private func regExResults(regExText: String, targetText: String, caseSensitive: Bool) -> [RegExResults] {
+// Επιστρέφει τα αποτελέσματα απο την αναζήτηση με regex σε ένα κείμενο.
+struct Regex {
+    static func results(regExText: String, targetText: String, caseSensitive: Bool) -> [RegExResults] {
         // μηδενίζω τα αποτελέσματα
         var results: [RegExResults] = []
         // τα options του regular expression
@@ -258,7 +238,7 @@ public class RegexController: ObservableObject {
 
 // MARK: RegExResults
 /// Θα αποθηκεύει τα αποτελέσματα απο την εύρεση του Regex
-public struct RegExResults: Hashable {
+struct RegExResults: Hashable {
     // το αποτέλεσμα
     let match: String
     // αν είναι το πλήρες αποτέλεσμα ή κάποιο απο τα capture του regex που όρισε ο χρήστης με παρένθεση.
