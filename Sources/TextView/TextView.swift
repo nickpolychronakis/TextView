@@ -27,17 +27,18 @@ public struct TextView: NSViewRepresentable {
     
     public func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollableTextView()
-        guard let textView = scrollView.documentView as? NSTextView else {
-            fatalError("Έπρεπε να είναι οπωσδήποτε το textView == NSTextView")
-        }
+        // Πρέπει οποσδήποτε να είναι το textView του τύπου NSTextView
+        let textView = scrollView.documentView as! NSTextView
         
         textView.delegate = context.coordinator
         return scrollView
     }
     
     public func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        guard let textView = scrollView.documentView as? NSTextView else { return }
+        // Πρέπει οποσδήποτε να είναι το textView του τύπου NSTextView
+        let textView = scrollView.documentView as! NSTextView
         if textView.string != text {
+            // Αν έχει άλλάξει το κείμενο προγραμματιστικά μέσω του binding(και όχι αν πληκτρολόγισε ο χρήστης μέσα στο textView), μόνο τότε αλλάζω το κείμενο του textView.
             textView.string = text
         } else {
             // Αφαιρώ όλα τα προηγούμενα attributes
@@ -90,12 +91,10 @@ public struct TextView: NSViewRepresentable {
         }
         
         public func textDidBeginEditing(_ notification: Notification) {
-//            guard let editor = notification.object as? NSTextView else { return }
             textViewIsEditing.wrappedValue = true
         }
         
         public func textDidEndEditing(_ notification: Notification) {
-//             guard let editor = notification.object as? NSTextView else { return }
             textViewIsEditing.wrappedValue = false
          }
     }
@@ -132,6 +131,7 @@ public struct TextView: UIViewRepresentable {
     
     public func updateUIView(_ textView: UITextView, context: Context) {
         if textView.text != text {
+            // Αν έχει άλλάξει το κείμενο προγραμματιστικά μέσω του binding(και όχι αν πληκτρολόγισε ο χρήστης μέσα στο textView), μόνο τότε αλλάζω το κείμενο του textView.
             textView.attributedText = NSMutableAttributedString(string: text)
         } else {
             // Αφαιρώ όλα τα προηγούμενα attributes
