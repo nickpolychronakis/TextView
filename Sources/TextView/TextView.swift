@@ -15,7 +15,7 @@ public struct TextView: NSViewRepresentable {
         self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false)
     }
     
-    var regexResults: [RegExResults]
+    var regexResults: [NSTextCheckingResult]
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
     
@@ -54,19 +54,14 @@ public struct TextView: NSViewRepresentable {
         
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
         for result in regexResults {
-            // FIXME: Να μπεί έλεγχος ότι το result.range δεν είναι μεγαλύτερο απο το range του text του textView.
-            if result.isFullMatch {
-                textView.textStorage?.setAttributes(yellowAttr, range: result.range)
-                // Δημιουργεί ένα animation όταν βρεθεί το fullMatch
+            textView.textStorage?.setAttributes(yellowAttr, range: result.range)
+                // Δημιουργεί ένα animation όταν βρεθεί το match
                 if textViewIsEditing == false {
                     // Για λόγους πόρων συστήματος έβαλα περιορισμούς στο πότε θα γίνεται το animation
-                    if result.match.utf16.count > 2  && regexResults.count < 10 {
+                    if regexResults.count < 10 {
                         textView.showFindIndicator(for: result.range)
                     }
                 }
-            } else {
-                textView.textStorage?.addAttributes(orangeAttr, range: result.range)
-            }
         }
         
         textView.font = NSFont.preferredFont(forTextStyle: .body)
@@ -113,7 +108,7 @@ public struct TextView: UIViewRepresentable {
         self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false)
     }
     
-    var regexResults: [RegExResults]
+    var regexResults: [NSTextCheckingResult]
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
     
@@ -147,12 +142,7 @@ public struct TextView: UIViewRepresentable {
         
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
         for result in regexResults {
-            // FIXME: Να μπεί έλεγχος ότι το result.range δεν είναι μεγαλύτερο απο το range του text του textView.
-            if result.isFullMatch {
-                textView.textStorage.setAttributes(yellowAttr, range: result.range)
-            } else {
-                textView.textStorage.addAttributes(orangeAttr, range: result.range)
-            }
+            textView.textStorage.setAttributes(yellowAttr, range: result.range)
         }
         
         textView.font = UIFont.preferredFont(forTextStyle: .body)
@@ -193,9 +183,9 @@ public struct TextView: UIViewRepresentable {
 // MARK: CONTROLLER
 // Επιστρέφει τα αποτελέσματα απο την αναζήτηση με regex σε ένα κείμενο.
 struct Regex {
-    static func results(regExText: String, targetText: String, caseSensitive: Bool) -> [RegExResults] {
+    static func results(regExText: String, targetText: String, caseSensitive: Bool) -> [NSTextCheckingResult] {
         // μηδενίζω τα αποτελέσματα
-        var results: [RegExResults] = []
+        var results: [NSTextCheckingResult] = []
         // τα options του regular expression
         var regexOptions: NSRegularExpression.Options = []
         // προσθέτω το option αν για την αναζήτηση θα υπολογίζονται η διαφορά κεφαλαίων-μικρών ή όχι.
@@ -204,27 +194,7 @@ struct Regex {
             // δημιουργία του regex
             let reg = try NSRegularExpression(pattern: regExText, options: regexOptions)
             // εκτέλεση του regex
-            let regMatches = reg.matches(in: targetText, options: [], range: NSRange(location: 0, length: targetText.utf16.count))
-            for match in regMatches {
-                // αν βρέθηκε κάποιο αποτέλεσμα
-                if let wholeRange = Range(match.range(at: 0), in: targetText) {
-                    let tempFullmatch = String(targetText[wholeRange])
-                    results.append(RegExResults(match: tempFullmatch, isFullMatch: true, range: match.range(at: 0)))
-                    
-                    // αν υπάρχουν group για το συγκεκριμένο match
-                    for i in 1..<match.numberOfRanges {
-                        // βρίσκω το range για το κάθε group
-                        if let wholeRange = Range(match.range(at: i), in: targetText) {
-                            // το μετατρέπω σε string
-                            let tempGroup = String(targetText[wholeRange])
-                            if tempGroup != "" {
-                                // και αν δεν είναι κενό το προσθέτω στα αποτελεσματα των group
-                                results.append(RegExResults(match: tempGroup, isFullMatch: false, range: match.range(at: i)))
-                            }
-                        }
-                    }
-                }
-            }
+            return reg.matches(in: targetText, options: [], range: NSRange(location: 0, length: targetText.utf16.count))
         } catch {
             // σε περίπτωση σφάλματος μηδενίζω το array
             results = []
@@ -232,17 +202,4 @@ struct Regex {
         return results
     }
     
-}
-
-
-
-// MARK: RegExResults
-/// Θα αποθηκεύει τα αποτελέσματα απο την εύρεση του Regex
-struct RegExResults: Hashable {
-    // το αποτέλεσμα
-    let match: String
-    // αν είναι το πλήρες αποτέλεσμα ή κάποιο απο τα capture του regex που όρισε ο χρήστης με παρένθεση.
-    let isFullMatch: Bool
-    // το range που βρίσκεται το αποτέλεσμα
-    let range: NSRange
 }
