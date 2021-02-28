@@ -2,14 +2,24 @@ import XCTest
 @testable import TextView
 
 final class TextViewTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-//        XCTAssertEqual(TextView().text, "Hello, World!")
+    func testNumberOfResults() {
+        let reg = Regex.results(regExText: "Hello", targetText: "Hello, world!", caseSensitive: false)
+        XCTAssertTrue(reg.count == 1)
     }
-
-    static var allTests = [
-        ("testExample", testExample),
-    ]
+    
+    func testRangeOfFirstResult() {
+        let reg = Regex.results(regExText: "Hello", targetText: "Hello, world!", caseSensitive: false)
+        XCTAssertTrue(reg.first != nil)
+        XCTAssertTrue(reg.first!.range == NSRange(location: 0, length: 5))
+    }
+    
+    func testCaseInsensitive() {
+        let reg = Regex.results(regExText: "hello", targetText: "Hello, world!", caseSensitive: false)
+        XCTAssertTrue(reg.count == 1)
+    }
+    
+    func testCaseSensitive() {
+        let reg = Regex.results(regExText: "hello", targetText: "Hello, world!", caseSensitive: true)
+        XCTAssertTrue(reg.count == 0)
+    }
 }
