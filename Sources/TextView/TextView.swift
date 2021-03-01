@@ -53,22 +53,24 @@ public struct TextView: NSViewRepresentable {
         }
         
         // κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode
-        textView.textColor = NSColor.labelColor
+//        textView.textColor = NSColor.labelColor
         
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
         for result in regexResults {
-            textView.textStorage?.setAttributes(yellowAttr, range: result.range)
+            // FIXME: Να προσθέτει και μαύρο χρώμα στα font αν δεν είναι link
+            textView.textStorage?.addAttributes(yellowAttr, range: result.range)
                 // Δημιουργεί ένα animation όταν βρεθεί το match
                 if textViewIsEditing == false {
                     // Για λόγους πόρων συστήματος έβαλα περιορισμούς στο πότε θα γίνεται το animation
-                    if regexResults.count < 10 {
+                    if result.range.length > 3 && regexResults.count < 10 {
                         textView.showFindIndicator(for: result.range)
                     }
                 }
         }
         
-        textView.font = NSFont.preferredFont(forTextStyle: .body)
+//        textView.font = NSFont.preferredFont(forTextStyle: .body)
         // Επανέλεγχος για hyperlink
+        // FIXME: Ο επανυπολογισμός να γίνεται μόνο όταν είναι απαραίτητο
         textView.checkTextInDocument(nil)
     }
     
@@ -160,17 +162,11 @@ public struct TextView: UIViewRepresentable {
         
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
         for result in regexResults {
-            textView.textStorage.setAttributes(yellowAttr, range: result.range)
+            // FIXME: Να προσθέτει και μαύρο χρώμα στα font αν δεν είναι link
+            textView.textStorage.addAttributes(yellowAttr, range: result.range)
         }
         
         textView.font = UIFont.preferredFont(forTextStyle: .body)
-        
-        // FIXME: Να προσπαθήσω να βρώ άλλον τρόπο να ξαναϋπολογίζει τα hyperlinks, γιατί έτσι προκαλείται ένα μικρό flickering στα hyperlinks.
-        // Το κάνω αναγκαστικά για να ξαναυπολογίσει τα hyperlinks
-        if textView.isEditable == false {
-            textView.isEditable = true
-            textView.isEditable = false
-        }
     }
     
     public func makeCoordinator() -> Coordinator {
