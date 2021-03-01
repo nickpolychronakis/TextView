@@ -45,6 +45,9 @@ public struct TextView: NSViewRepresentable {
         if textView.string != text {
             // Αν έχει άλλάξει το κείμενο προγραμματιστικά μέσω του binding(και όχι αν πληκτρολόγισε ο χρήστης μέσα στο textView), μόνο τότε αλλάζω το κείμενο του textView.
             textView.string = text
+            // κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode
+//        textView.textColor = NSColor.textColor
+//        textView.font = NSFont.preferredFont(forTextStyle: .body)
         } else {
             // Αφαιρώ όλα τα προηγούμενα attributes
             textView.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedString().length)) { (attributes, range, pointer) in
@@ -55,9 +58,6 @@ public struct TextView: NSViewRepresentable {
                 
             }
         }
-        
-        // κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode
-//        textView.textColor = NSColor.textColor
         
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
         for result in regexResults {
@@ -72,7 +72,6 @@ public struct TextView: NSViewRepresentable {
                 }
         }
         
-//        textView.font = NSFont.preferredFont(forTextStyle: .body)
         // Επανέλεγχος για hyperlink
         // FIXME: Ο επανυπολογισμός να γίνεται μόνο όταν είναι απαραίτητο
         textView.checkTextInDocument(nil)
@@ -154,6 +153,9 @@ public struct TextView: UIViewRepresentable {
         if textView.text != text {
             // Αν έχει άλλάξει το κείμενο προγραμματιστικά μέσω του binding(και όχι αν πληκτρολόγισε ο χρήστης μέσα στο textView), μόνο τότε αλλάζω το κείμενο του textView.
             textView.attributedText = NSMutableAttributedString(string: text)
+            // κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode
+            textView.textColor = UIColor.label
+            textView.font = UIFont.preferredFont(forTextStyle: .body)
         } else {
             // Αφαιρώ όλα τα προηγούμενα attributes
             textView.textStorage.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedText.length)) { (attributes, range, pointer) in
@@ -164,17 +166,11 @@ public struct TextView: UIViewRepresentable {
 
             }
         }
-        
-        // κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode
-        textView.textColor = UIColor.label
-        
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
         for result in regexResults {
             // FIXME: Να προσθέτει και μαύρο χρώμα στα font αν δεν είναι link
             textView.textStorage.addAttributes(yellowAttr, range: result.range)
         }
-        
-        textView.font = UIFont.preferredFont(forTextStyle: .body)
     }
     
     public func makeCoordinator() -> Coordinator {
