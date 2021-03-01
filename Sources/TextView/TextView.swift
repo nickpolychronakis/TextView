@@ -23,7 +23,10 @@ public struct TextView: NSViewRepresentable {
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
     
-    private let yellowAttr = [NSAttributedString.Key.backgroundColor: NSColor.yellow]
+    private let yellowAttr = [
+        NSAttributedString.Key.backgroundColor: NSColor.yellow,
+        NSAttributedString.Key.foregroundColor: NSColor.black
+    ]
     
     public func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollableTextView()
@@ -47,13 +50,14 @@ public struct TextView: NSViewRepresentable {
             textView.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedString().length)) { (attributes, range, pointer) in
                 if (attributes[.backgroundColor] as? NSColor) == NSColor.yellow {
                     textView.textStorage?.removeAttribute(NSAttributedString.Key.backgroundColor, range: range)
+                    textView.textStorage?.addAttribute(.foregroundColor, value: NSColor.textColor, range: range)
                 }
                 
             }
         }
         
         // κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode
-//        textView.textColor = NSColor.labelColor
+//        textView.textColor = NSColor.textColor
         
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
         for result in regexResults {
@@ -125,7 +129,10 @@ public struct TextView: UIViewRepresentable {
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
     
-    private let yellowAttr = [NSAttributedString.Key.backgroundColor: UIColor.yellow]
+    private let yellowAttr = [
+        NSAttributedString.Key.backgroundColor: UIColor.yellow,
+        NSAttributedString.Key.foregroundColor: UIColor.black
+    ]
     
     public func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -152,6 +159,7 @@ public struct TextView: UIViewRepresentable {
             textView.textStorage.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedText.length)) { (attributes, range, pointer) in
                 if (attributes[.backgroundColor] as? UIColor) == UIColor.yellow {
                     textView.textStorage.removeAttribute(NSAttributedString.Key.backgroundColor, range: range)
+                    textView.textStorage.addAttribute(.foregroundColor, value: UIColor.label, range: range)
                 }
 
             }
