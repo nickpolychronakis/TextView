@@ -12,7 +12,7 @@ public struct TextView: NSViewRepresentable {
     public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
-        self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false)
+        self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
     }
     
     var regexResults: [NSTextCheckingResult]
@@ -110,7 +110,7 @@ public struct TextView: UIViewRepresentable {
     public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
-        self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false)
+        self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
     }
     
     var regexResults: [NSTextCheckingResult]
@@ -266,7 +266,7 @@ extension UITextView {
 // MARK: REGEX FUNCTION
 // Επιστρέφει τα αποτελέσματα απο την αναζήτηση με regex σε ένα κείμενο.
 struct Regex {
-    static func results(regExText: String, targetText: String, caseSensitive: Bool) -> [NSTextCheckingResult] {
+    static func results(regExText: String, targetText: String, caseSensitive: Bool, searchWithRegexCharacters: Bool) -> [NSTextCheckingResult] {
         // Αφαιρώ τα διακριτικά (τόνους) απο το κείμενο.
         let foldedRegexText = regExText.folding(options: .diacriticInsensitive, locale: .current)
         // Υπάρχει κίνδυνος να τροποποιεί το μήκος του string χωρίς να το ξέρω, και να δημιουργήσει προβλήματα αργότερα, να το έχω υπ' όψην μου.
@@ -281,9 +281,9 @@ struct Regex {
         var results: [NSTextCheckingResult] = []
         // τα options του regular expression
         var regexOptions: NSRegularExpression.Options = []
-        // Θα αγνωεί τους ειδικούς χαρακτήρες για το REGEX και θα θεωρεί το regExText ως κανονικό String.
-        regexOptions.insert(.ignoreMetacharacters)
-        // προσθέτω το option αν για την αναζήτηση θα υπολογίζονται η διαφορά κεφαλαίων-μικρών ή όχι.
+        // Αν θα αγνοεί τους ειδικούς χαρακτήρες για το REGEX και θα θεωρεί το regExText ως κανονικό String.
+        if !searchWithRegexCharacters { regexOptions.insert(.ignoreMetacharacters) }
+        // Αν για την αναζήτηση θα υπολογίζονται η διαφορά κεφαλαίων-μικρών ή όχι.
         if !caseSensitive { regexOptions.insert(.caseInsensitive) }
         do {
             // δημιουργία του regex
