@@ -91,12 +91,12 @@ public struct TextView: NSViewRepresentable {
         }
         
         public func textDidBeginEditing(_ notification: Notification) {
-            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
+            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update. Φταίει το checkTextInDocument μέσα στο updateView. Προς το παρόν όμως δεν δημιουργεί πρόβλημα.
             self.parent.textViewIsEditing = true
         }
         
         public func textDidEndEditing(_ notification: Notification) {
-            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
+            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update. Φταίει το checkTextInDocument μέσα στο updateView. Προς το παρόν όμως δεν δημιουργεί πρόβλημα.
             self.parent.textViewIsEditing = false
          }
     }
@@ -186,6 +186,7 @@ public struct TextView: UIViewRepresentable {
      
         public func textViewDidChange(_ textView: UITextView) {
             if self.parent.text != textView.text {
+                // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update. Προς το παρόν όμως δεν δημιουργεί πρόβλημα.
                 self.parent.text = textView.text
             }
         }
