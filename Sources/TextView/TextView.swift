@@ -20,17 +20,15 @@ public struct TextView: NSViewRepresentable {
     @Binding var textViewIsEditing: Bool
     
     private let yellowAttr = [NSAttributedString.Key.backgroundColor: NSColor.yellow]
-    private let orangeAttr: [NSAttributedString.Key : Any] = [
-        NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-        NSAttributedString.Key.underlineColor: NSColor.red
-    ]
     
     public func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollableTextView()
         // Πρέπει οποσδήποτε να είναι το textView του τύπου NSTextView
         let textView = scrollView.documentView as! NSTextView
-        
         textView.delegate = context.coordinator
+        // Ενεργοποιώ τα hyperlink
+        textView.isAutomaticLinkDetectionEnabled = true
+        
         return scrollView
     }
     
@@ -44,6 +42,7 @@ public struct TextView: NSViewRepresentable {
             // Αφαιρώ όλα τα προηγούμενα attributes
             textView.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedString().length)) { (attributes, range, pointer) in
                 for attribute in attributes {
+                    // FIXME: Να αφαιρεί μόνο το yellowAttr
                     textView.textStorage?.removeAttribute(attribute.key, range: range)
                 }
             }
@@ -65,6 +64,8 @@ public struct TextView: NSViewRepresentable {
         }
         
         textView.font = NSFont.preferredFont(forTextStyle: .body)
+        // Επανέλεγχος για hyperlink
+        textView.checkTextInDocument(self)
     }
     
     public func makeCoordinator() -> Coordinator {
@@ -82,14 +83,17 @@ public struct TextView: NSViewRepresentable {
         
         public func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
+            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
             self.text.wrappedValue = textView.string
         }
         
         public func textDidBeginEditing(_ notification: Notification) {
+            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
             textViewIsEditing.wrappedValue = true
         }
         
         public func textDidEndEditing(_ notification: Notification) {
+            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
             textViewIsEditing.wrappedValue = false
          }
     }
@@ -113,14 +117,24 @@ public struct TextView: UIViewRepresentable {
     @Binding var textViewIsEditing: Bool
     
     private let yellowAttr = [NSAttributedString.Key.backgroundColor: UIColor.yellow]
-    private let orangeAttr: [NSAttributedString.Key : Any] = [
-        NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-        NSAttributedString.Key.underlineColor: UIColor.red
-    ]
     
     public func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
         textView.delegate = context.coordinator
+        
+        // Ενεργοποιώ τα hyperlink
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.dataDetectorTypes = .all
+        textView.linkTextAttributes = [
+            NSAttributedString.Key.foregroundColor:UIColor.systemBlue,
+            NSAttributedString.Key.underlineStyle:NSNumber(value: 0)
+        ]
+        // tap gesture for textView
+        /// Το tap gesture που θα κάνει το isEditable = true του textView. Αυτό χρειάζεται ώστε όταν ο χρήστης δεν επεξεργάζεται το textView, αυτό θα είναι isEditable = false και έτσι δείχνει τα links ενεργοποιημένα, ενώ όταν πατηθεί το textView και ενεργοποιηθεί το παρακάτω gesture, θα κάνει το isEditable = true και έτσι θα μπορεί ο χρήστης να επεξεργαστεί το κείμενο.
+        let tap = UITapGestureRecognizer(target: textView.self, action: #selector(UITextView.textViewDidTapped(recognizer:)))
+        textView.addGestureRecognizer(tap)
+        
         return textView
     }
     
@@ -132,6 +146,7 @@ public struct TextView: UIViewRepresentable {
             // Αφαιρώ όλα τα προηγούμενα attributes
             textView.textStorage.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedText.length)) { (attributes, range, pointer) in
                 for attribute in attributes {
+                    // FIXME: Να αφαιρεί μόνο το yellowAttr
                     textView.textStorage.removeAttribute(attribute.key, range: range)
                 }
             }
@@ -171,7 +186,67 @@ public struct TextView: UIViewRepresentable {
         }
         
         public func textViewDidEndEditing(_ textView: UITextView) {
+            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
             textViewIsEditing.wrappedValue = false
+            // Ξανααπενεργοποιεί το textView ώστε να είναι επιλέξιμα τα hyperlinks.
+            textView.isEditable = false
+        }
+    }
+}
+
+
+// MARK: TEXTVIEW EXTENSION
+extension UITextView {
+    /// Τοποθετεί τον cursor στο σημείο που πάτησε ο χρήστης
+    func placeCursor(_ textView: UITextView, _ location: CGPoint) {
+        // Βρίσκω το κοντινότερο σημείο στο tap που μπορεί να τοποθετηθεί ο κέρσορας
+        if let tapPosition = textView.closestPosition(to: location) {
+            let loc = textView.offset(from: textView.beginningOfDocument, to: tapPosition)
+            textView.selectedRange = NSMakeRange(loc, 0)
+            textView.isEditable = true
+            textView.becomeFirstResponder()
+        }
+    }
+    
+    /// Η συνάρτηση που ενεργοποιήται απο το gestureRecognizer όταν πατηθεί το textView. Αν πατηθεί απλό κείμενο ενεργοποιείται η επεξεργασία, αν πατηθεί link ενεργοποιείται το link.
+    @objc func textViewDidTapped(recognizer: UITapGestureRecognizer) {
+        /// Σιγουρεύομαι ότι το view απο το recognizer είναι το textView
+        guard let textView = recognizer.view as? UITextView else { return }
+        #if os(macOS)
+        // Είναι μόνο για macOS γιατί στο iOS ακόμα και όταν είναι editable πρέπει να μπορεί να κάνει touch για να επιλέγει το σημείο που θέλει να γράψει.
+        guard textView.isEditable == false else { return }
+        #endif
+        /// Το  CGPoint που πάτησε ο χρήστης στο textView
+        let location = recognizer.location(in: textView)
+        /// Το CGPoint που πάτησε ο χρήστης στο textView, αφού έχω αφαιρέσει όμως τα insets για να λειτουργήσει σωστά το σημείο που πατάω τα links.
+        var glyphLocation = location
+        glyphLocation.x -= textView.textContainerInset.left
+        glyphLocation.y -= textView.textContainerInset.top
+        /// Τα link που βρίσκονται κοντά στο σημείο που πάτησε ο χρήστης
+        let glyphIndex: Int = textView.layoutManager.glyphIndex(for: glyphLocation, in: textView.textContainer, fractionOfDistanceThroughGlyph: nil)
+        /// Βρίσκω το CGRect του συγκεκριμένου link που πάτησε ο χρήστης
+        let glyphRect = textView.layoutManager.boundingRect(forGlyphRange: NSRange(location: glyphIndex, length: 1), in: textView.textContainer)
+        // Αν το CGRect του link περιέχει το CGPoint που πάτησε ο χρήστης τότε...
+        if glyphRect.contains(glyphLocation) {
+            /// Η θέση που βρίσκεται ο πρώτος χαρακτήρας του link στο κείμενο
+            let characterIndex: Int = textView.layoutManager.characterIndexForGlyph(at: glyphIndex)
+            /// Το attribute του link.
+            let attributeValue = textView.textStorage.attribute(NSAttributedString.Key.link, at: characterIndex, effectiveRange: nil)
+            /// Αν το attribute του link είναι URL τότε...
+            if let url = attributeValue as? URL {
+                /// Αν μπορεί να ανοίξει το URL τότε...
+                if UIApplication.shared.canOpenURL(url) {
+                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                } else {
+                    print("There is a problem in your link.")
+                }
+            } else {
+                // place the cursor to tap position
+                placeCursor(textView, location)
+            }
+        } else {
+            // place the cursor to tap position
+            placeCursor(textView, location)
         }
     }
 }
@@ -180,7 +255,10 @@ public struct TextView: UIViewRepresentable {
 
 
 
-// MARK: CONTROLLER
+
+
+
+// MARK: REGEX FUNCTION
 // Επιστρέφει τα αποτελέσματα απο την αναζήτηση με regex σε ένα κείμενο.
 struct Regex {
     static func results(regExText: String, targetText: String, caseSensitive: Bool) -> [NSTextCheckingResult] {
