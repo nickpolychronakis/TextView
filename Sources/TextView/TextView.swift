@@ -181,7 +181,7 @@ public struct TextView: UIViewRepresentable {
         }
      
         public func textViewDidChange(_ textView: UITextView) {
-            if self.parent.text != textView.string {
+            if self.parent.text != textView.text {
                 self.parent.text = textView.text
             }
         }
