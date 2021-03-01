@@ -45,11 +45,10 @@ public struct TextView: NSViewRepresentable {
         } else {
             // Αφαιρώ όλα τα προηγούμενα attributes
             textView.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedString().length)) { (attributes, range, pointer) in
-                for attribute in attributes {
-                    if (attributes[.backgroundColor] as? NSColor) == NSColor.yellow {
-                        textView.textStorage?.removeAttribute(attribute.key, range: range)
-                    }
+                if (attributes[.backgroundColor] as? NSColor) == NSColor.yellow {
+                    textView.textStorage?.removeAttribute(NSAttributedString.Key.backgroundColor, range: range)
                 }
+                
             }
         }
         
@@ -149,11 +148,10 @@ public struct TextView: UIViewRepresentable {
         } else {
             // Αφαιρώ όλα τα προηγούμενα attributes
             textView.textStorage.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedText.length)) { (attributes, range, pointer) in
-                for attribute in attributes {
-                    if (attributes[.backgroundColor] as? UIColor) == UIColor.yellow {
-                        textView.textStorage.removeAttribute(attribute.key, range: range)
-                    }
+                if (attributes[.backgroundColor] as? UIColor) == UIColor.yellow {
+                    textView.textStorage.removeAttribute(NSAttributedString.Key.backgroundColor, range: range)
                 }
+
             }
         }
         
