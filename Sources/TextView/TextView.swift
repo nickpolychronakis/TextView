@@ -12,6 +12,7 @@ public struct TextView: NSViewRepresentable {
     public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
+        // FIXME: να προσθέσω έλεγχο αν είναι κενό το searchText
         self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
     }
     
@@ -70,32 +71,31 @@ public struct TextView: NSViewRepresentable {
     }
     
     public func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text, textViewIsEditing: $textViewIsEditing)
+        Coordinator(self)
     }
      
     public class Coordinator: NSObject, NSTextViewDelegate {
-        var text: Binding<String>
-        var textViewIsEditing: Binding<Bool>
+        var parent: TextView
      
-        init(text: Binding<String>, textViewIsEditing: Binding<Bool>) {
-            self.text = text
-            self.textViewIsEditing = textViewIsEditing
+        init(_ parent: TextView) {
+            self.parent = parent
         }
         
         public func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
-            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
-            self.text.wrappedValue = textView.string
+            if self.parent.text != textView.string {
+                self.parent.text = textView.string
+            }
         }
         
         public func textDidBeginEditing(_ notification: Notification) {
             // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
-            textViewIsEditing.wrappedValue = true
+            self.parent.textViewIsEditing = true
         }
         
         public func textDidEndEditing(_ notification: Notification) {
             // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
-            textViewIsEditing.wrappedValue = false
+            self.parent.textViewIsEditing = false
          }
     }
 }
@@ -110,6 +110,7 @@ public struct TextView: UIViewRepresentable {
     public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
+        // FIXME: να προσθέσω έλεγχο αν είναι κενό το searchText
         self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
     }
     
@@ -169,30 +170,29 @@ public struct TextView: UIViewRepresentable {
     }
     
     public func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text, textViewIsEditing: $textViewIsEditing)
+        Coordinator(self)
     }
      
     public class Coordinator: NSObject, UITextViewDelegate {
-        var text: Binding<String>
-        var textViewIsEditing: Binding<Bool>
-
+        var parent: TextView
      
-        init(text: Binding<String>, textViewIsEditing: Binding<Bool>) {
-            self.text = text
-            self.textViewIsEditing = textViewIsEditing
+        init(_ parent: TextView) {
+            self.parent = parent
         }
      
         public func textViewDidChange(_ textView: UITextView) {
-            self.text.wrappedValue = textView.text
+            if self.parent.text != textView.string {
+                self.parent.text = textView.text
+            }
         }
         
         public func textViewDidBeginEditing(_ textView: UITextView) {
-            textViewIsEditing.wrappedValue = true
+            self.parent.textViewIsEditing = true
         }
         
         public func textViewDidEndEditing(_ textView: UITextView) {
             // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
-            textViewIsEditing.wrappedValue = false
+            self.parent.textViewIsEditing = false
             // Ξανααπενεργοποιεί το textView ώστε να είναι επιλέξιμα τα hyperlinks.
             textView.isEditable = false
         }
@@ -217,10 +217,6 @@ extension UITextView {
     @objc func textViewDidTapped(recognizer: UITapGestureRecognizer) {
         /// Σιγουρεύομαι ότι το view απο το recognizer είναι το textView
         guard let textView = recognizer.view as? UITextView else { return }
-        #if os(macOS)
-        // Είναι μόνο για macOS γιατί στο iOS ακόμα και όταν είναι editable πρέπει να μπορεί να κάνει touch για να επιλέγει το σημείο που θέλει να γράψει.
-        guard textView.isEditable == false else { return }
-        #endif
         /// Το  CGPoint που πάτησε ο χρήστης στο textView
         let location = recognizer.location(in: textView)
         /// Το CGPoint που πάτησε ο χρήστης στο textView, αφού έχω αφαιρέσει όμως τα insets για να λειτουργήσει σωστά το σημείο που πατάω τα links.
