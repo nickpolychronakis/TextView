@@ -67,7 +67,7 @@ public struct TextView: NSViewRepresentable {
         
         textView.font = NSFont.preferredFont(forTextStyle: .body)
         // Επανέλεγχος για hyperlink
-        textView.checkTextInDocument(self)
+        textView.checkTextInDocument(nil)
     }
     
     public func makeCoordinator() -> Coordinator {
