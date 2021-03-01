@@ -42,8 +42,9 @@ public struct TextView: NSViewRepresentable {
             // Αφαιρώ όλα τα προηγούμενα attributes
             textView.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedString().length)) { (attributes, range, pointer) in
                 for attribute in attributes {
-                    // FIXME: Να αφαιρεί μόνο το yellowAttr
-                    textView.textStorage?.removeAttribute(attribute.key, range: range)
+                    if (attributes[.backgroundColor] as? NSColor) == NSColor.yellow {
+                        textView.textStorage?.removeAttribute(attribute.key, range: range)
+                    }
                 }
             }
         }
@@ -126,10 +127,6 @@ public struct TextView: UIViewRepresentable {
         textView.isEditable = false
         textView.isSelectable = true
         textView.dataDetectorTypes = .all
-        textView.linkTextAttributes = [
-            NSAttributedString.Key.foregroundColor:UIColor.systemBlue,
-            NSAttributedString.Key.underlineStyle:NSNumber(value: 0)
-        ]
         // tap gesture for textView
         /// Το tap gesture που θα κάνει το isEditable = true του textView. Αυτό χρειάζεται ώστε όταν ο χρήστης δεν επεξεργάζεται το textView, αυτό θα είναι isEditable = false και έτσι δείχνει τα links ενεργοποιημένα, ενώ όταν πατηθεί το textView και ενεργοποιηθεί το παρακάτω gesture, θα κάνει το isEditable = true και έτσι θα μπορεί ο χρήστης να επεξεργαστεί το κείμενο.
         let tap = UITapGestureRecognizer(target: textView.self, action: #selector(UITextView.textViewDidTapped(recognizer:)))
@@ -146,8 +143,9 @@ public struct TextView: UIViewRepresentable {
             // Αφαιρώ όλα τα προηγούμενα attributes
             textView.textStorage.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedText.length)) { (attributes, range, pointer) in
                 for attribute in attributes {
-                    // FIXME: Να αφαιρεί μόνο το yellowAttr
-                    textView.textStorage.removeAttribute(attribute.key, range: range)
+                    if (attributes[.backgroundColor] as? UIColor) == UIColor.yellow {
+                        textView.textStorage.removeAttribute(attribute.key, range: range)
+                    }
                 }
             }
         }
@@ -161,6 +159,13 @@ public struct TextView: UIViewRepresentable {
         }
         
         textView.font = UIFont.preferredFont(forTextStyle: .body)
+        
+        // FIXME: Να προσπαθήσω να βρώ άλλον τρόπο να ξαναϋπολογίζει τα hyperlinks, γιατί έτσι προκαλείται ένα μικρό flickering στα hyperlinks.
+        // Το κάνω αναγκαστικά για να ξαναυπολογίσει τα hyperlinks
+        if textView.isEditable == false {
+            textView.isEditable = true
+            textView.isEditable = false
+        }
     }
     
     public func makeCoordinator() -> Coordinator {
