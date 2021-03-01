@@ -191,7 +191,6 @@ public struct TextView: UIViewRepresentable {
         }
         
         public func textViewDidEndEditing(_ textView: UITextView) {
-            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update.
             self.parent.textViewIsEditing = false
             // Ξανααπενεργοποιεί το textView ώστε να είναι επιλέξιμα τα hyperlinks.
             textView.isEditable = false
