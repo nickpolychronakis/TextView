@@ -12,8 +12,11 @@ public struct TextView: NSViewRepresentable {
     public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
-        // FIXME: να προσθέσω έλεγχο αν είναι κενό το searchText
-        self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
+        if !searchText.isEmpty {
+            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
+        } else {
+            self.regexResults = []
+        }
     }
     
     var regexResults: [NSTextCheckingResult]
@@ -110,8 +113,11 @@ public struct TextView: UIViewRepresentable {
     public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
-        // FIXME: να προσθέσω έλεγχο αν είναι κενό το searchText
-        self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
+        if !searchText.isEmpty {
+            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
+        } else {
+            self.regexResults = []
+        }
     }
     
     var regexResults: [NSTextCheckingResult]
