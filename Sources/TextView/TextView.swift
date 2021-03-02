@@ -46,8 +46,12 @@ public struct TextView: NSViewRepresentable {
             // Αν έχει άλλάξει το κείμενο προγραμματιστικά μέσω του binding(και όχι αν πληκτρολόγισε ο χρήστης μέσα στο textView), μόνο τότε αλλάζω το κείμενο του textView.
             textView.string = text
             // κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode
-//        textView.textColor = NSColor.textColor
-//        textView.font = NSFont.preferredFont(forTextStyle: .body)
+//            textView.textColor = NSColor.textColor
+//            textView.font = NSFont.preferredFont(forTextStyle: .body)
+            
+//             FIXME: Ο επανυπολογισμός να γίνεται μόνο όταν είναι απαραίτητο καθώς προκαλεί εκτέλεση του textDidBeginEditing του Coordinator, το οποίο σε συνδιασμό με την μεταβλητή που υπάρχει εκεί, η οποία είναι Binding, πρόβλημα επανυπολογισμού του View την στιγμή που ήδη κάνει update, το οποίο έχει άγνωστες συνέπειες.
+//             Επανέλεγχος των hyperlink
+            textView.checkTextInDocument(nil)
         } else {
             // Αφαιρώ όλα τα προηγούμενα attributes
             textView.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedString().length)) { (attributes, range, pointer) in
@@ -70,10 +74,6 @@ public struct TextView: NSViewRepresentable {
                     }
                 }
         }
-        
-        // Επανέλεγχος για hyperlink
-        // FIXME: Ο επανυπολογισμός να γίνεται μόνο όταν είναι απαραίτητο
-        textView.checkTextInDocument(nil)
     }
     
     public func makeCoordinator() -> Coordinator {
