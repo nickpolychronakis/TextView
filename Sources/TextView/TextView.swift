@@ -4,12 +4,11 @@
 import SwiftUI
 
 
-// MARK: macOS
-
 #if os(macOS)
+// MARK: macOS
 public struct TextView: NSViewRepresentable {
     
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false, searchWithRegexCharacters: Bool = false) {
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false, searchWithRegexCharacters: Bool = false, hyperlinkDetection: Bool = true) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
         if !searchText.isEmpty {
@@ -17,11 +16,13 @@ public struct TextView: NSViewRepresentable {
         } else {
             self.regexResults = []
         }
+        self.hyperlinkDetection = hyperlinkDetection
     }
     
-    let regexResults: [NSTextCheckingResult]
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
+    let regexResults: [NSTextCheckingResult]
+    let hyperlinkDetection: Bool
     
     private let yellowAttr = [
         NSAttributedString.Key.backgroundColor: NSColor.yellow,
@@ -33,8 +34,10 @@ public struct TextView: NSViewRepresentable {
         // Πρέπει οποσδήποτε να είναι το textView του τύπου NSTextView
         let textView = scrollView.documentView as! NSTextView
         textView.delegate = context.coordinator
-        // Ενεργοποιώ τα hyperlink
-        textView.isAutomaticLinkDetectionEnabled = true
+        if hyperlinkDetection {
+            // Ενεργοποιώ τα hyperlink
+            textView.isAutomaticLinkDetectionEnabled = true
+        }
         
         return scrollView
     }
@@ -46,7 +49,9 @@ public struct TextView: NSViewRepresentable {
         if textView.string != text {
             // Αφαιρώ όλα τα προηγούμενα yellow background και link attributes
             textView.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedString().length)) { (attributes, range, pointer) in
-                textView.textStorage?.removeAttribute(NSAttributedString.Key.link, range: range)
+                if hyperlinkDetection {
+                    textView.textStorage?.removeAttribute(NSAttributedString.Key.link, range: range)
+                }
                 textView.textStorage?.removeAttribute(NSAttributedString.Key.backgroundColor, range: range)
                 textView.textStorage?.addAttribute(.foregroundColor, value: NSColor.textColor, range: range)
             }
@@ -54,11 +59,12 @@ public struct TextView: NSViewRepresentable {
             // Διαπίστωσα ότι δεν χρειάζεται στο macOS αλλαγή του χρώματος (κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode)
 //            textView.textColor = NSColor.textColor
 //            textView.font = NSFont.preferredFont(forTextStyle: .body)
-            
-            DispatchQueue.main.async {
-                // Επανέλεγχος των hyperlink
-                // Το έβαλα αναγκαστικά στο dispatch καθώς προκαλεί εκτέλεση του textDidBeginEditing του Coordinator, το οποίο σε συνδιασμό με την μεταβλητή που υπάρχει εκεί, η οποία είναι Binding, προκαλεί πρόβλημα επανυπολογισμού του View την στιγμή που ήδη κάνει update, το οποίο έχει άγνωστες συνέπειες.
-                textView.checkTextInDocument(nil)
+            if hyperlinkDetection {
+                DispatchQueue.main.async {
+                    // Επανέλεγχος των hyperlink
+                    // Το έβαλα αναγκαστικά στο dispatch καθώς προκαλεί εκτέλεση του textDidBeginEditing του Coordinator, το οποίο σε συνδιασμό με την μεταβλητή που υπάρχει εκεί, η οποία είναι Binding, προκαλεί πρόβλημα επανυπολογισμού του View την στιγμή που ήδη κάνει update, το οποίο έχει άγνωστες συνέπειες.
+                    textView.checkTextInDocument(nil)
+                }
             }
         } else {
             // Αφαιρώ όλα τα προηγούμενα yellow background attributes
@@ -120,7 +126,7 @@ public struct TextView: NSViewRepresentable {
 // MARK: iOS
 public struct TextView: UIViewRepresentable {
     
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false, searchWithRegexCharacters: Bool = false) {
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false, searchWithRegexCharacters: Bool = false, hyperlinkDetection: Bool = true) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
         if !searchText.isEmpty {
@@ -128,11 +134,13 @@ public struct TextView: UIViewRepresentable {
         } else {
             self.regexResults = []
         }
+        self.hyperlinkDetection = hyperlinkDetection
     }
     
-    let regexResults: [NSTextCheckingResult]
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
+    let regexResults: [NSTextCheckingResult]
+    let hyperlinkDetection: Bool
     
     private let yellowAttr = [
         NSAttributedString.Key.backgroundColor: UIColor.yellow,
@@ -143,14 +151,16 @@ public struct TextView: UIViewRepresentable {
         let textView = UITextView()
         textView.delegate = context.coordinator
         
-        // Ενεργοποιώ τα hyperlink
-        textView.isEditable = false
-        textView.isSelectable = true
-        textView.dataDetectorTypes = .all
-        // tap gesture for textView
-        /// Το tap gesture που θα κάνει το isEditable = true του textView. Αυτό χρειάζεται ώστε όταν ο χρήστης δεν επεξεργάζεται το textView, αυτό θα είναι isEditable = false και έτσι δείχνει τα links ενεργοποιημένα, ενώ όταν πατηθεί το textView και ενεργοποιηθεί το παρακάτω gesture, θα κάνει το isEditable = true και έτσι θα μπορεί ο χρήστης να επεξεργαστεί το κείμενο.
-        let tap = UITapGestureRecognizer(target: textView.self, action: #selector(UITextView.textViewDidTapped(recognizer:)))
-        textView.addGestureRecognizer(tap)
+        if hyperlinkDetection {
+            // Ενεργοποιώ τα hyperlink
+            textView.isEditable = false
+            textView.isSelectable = true
+            textView.dataDetectorTypes = .all
+            // tap gesture for textView
+            /// Το tap gesture που θα κάνει το isEditable = true του textView. Αυτό χρειάζεται ώστε όταν ο χρήστης δεν επεξεργάζεται το textView, αυτό θα είναι isEditable = false και έτσι δείχνει τα links ενεργοποιημένα, ενώ όταν πατηθεί το textView και ενεργοποιηθεί το παρακάτω gesture, θα κάνει το isEditable = true και έτσι θα μπορεί ο χρήστης να επεξεργαστεί το κείμενο.
+            let tap = UITapGestureRecognizer(target: textView.self, action: #selector(UITextView.textViewDidTapped(recognizer:)))
+            textView.addGestureRecognizer(tap)
+        }
         
         return textView
     }
@@ -201,8 +211,10 @@ public struct TextView: UIViewRepresentable {
         
         public func textViewDidEndEditing(_ textView: UITextView) {
             self.parent.textViewIsEditing = false
-            // Ξανααπενεργοποιεί το textView ώστε να είναι επιλέξιμα τα hyperlinks.
-            textView.isEditable = false
+            if self.parent.hyperlinkDetection {
+                // Ξανααπενεργοποιεί το textView ώστε να είναι επιλέξιμα τα hyperlinks.
+                textView.isEditable = false
+            }
         }
     }
 }
