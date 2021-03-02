@@ -166,6 +166,18 @@ public struct TextView: UIViewRepresentable {
     }
     
     public func updateUIView(_ textView: UITextView, context: Context) {
+        // Δίνει ή πέρνει το firstResponder απο το textView ανάλογα με το textViewIsEditing
+        if textViewIsEditing && !textView.isFirstResponder {
+            DispatchQueue.main.async {
+                textView.isEditable = true
+                textView.becomeFirstResponder()
+            }
+        } else if !textViewIsEditing && textView.isFirstResponder {
+            DispatchQueue.main.async {
+                textView.isEditable = false
+                textView.resignFirstResponder()
+            }
+        }
         if textView.text != text {
             // Αν έχει άλλάξει το κείμενο προγραμματιστικά μέσω του binding(και όχι αν πληκτρολόγισε ο χρήστης μέσα στο textView), μόνο τότε αλλάζω το κείμενο του textView.
             textView.attributedText = NSMutableAttributedString(string: text)
