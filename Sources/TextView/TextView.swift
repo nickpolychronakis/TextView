@@ -8,11 +8,11 @@ import SwiftUI
 // MARK: macOS
 public struct TextView: NSViewRepresentable {
     
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false, searchWithRegexCharacters: Bool = false, hyperlinkDetection: Bool = true) {
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false, regexSearch: Bool = false, hyperlinkDetection: Bool = true) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
         if !searchText.isEmpty {
-            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch, diacriticSensitive: diacriticSensitiveSearch, searchWithRegexCharacters: searchWithRegexCharacters)
+            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch, diacriticSensitive: diacriticSensitiveSearch, regexSearch: regexSearch)
         } else {
             self.regexResults = []
         }
@@ -149,11 +149,11 @@ public struct TextView: NSViewRepresentable {
 // MARK: iOS
 public struct TextView: UIViewRepresentable {
     
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false, searchWithRegexCharacters: Bool = false, hyperlinkDetection: Bool = true) {
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false, regexSearch: Bool = false, hyperlinkDetection: Bool = true) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
         if !searchText.isEmpty {
-            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch,  diacriticSensitive: diacriticSensitiveSearch, searchWithRegexCharacters: searchWithRegexCharacters)
+            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch,  diacriticSensitive: diacriticSensitiveSearch, regexSearch: regexSearch)
         } else {
             self.regexResults = []
         }
@@ -317,7 +317,7 @@ extension UITextView {
 // MARK: REGEX FUNCTION
 // Επιστρέφει τα αποτελέσματα απο την αναζήτηση με regex σε ένα κείμενο.
 struct Regex {
-    static func results(regExText: String, targetText: String, caseSensitive: Bool, diacriticSensitive: Bool, searchWithRegexCharacters: Bool) -> [NSTextCheckingResult] {
+    static func results(regExText: String, targetText: String, caseSensitive: Bool, diacriticSensitive: Bool, regexSearch: Bool) -> [NSTextCheckingResult] {
         // Αφαιρώ τα διακριτικά (τόνους) απο το κείμενο.
         let foldedRegexText = diacriticSensitive ? regExText : regExText.folding(options: .diacriticInsensitive, locale: .current)
         // Υπάρχει κίνδυνος να τροποποιεί το μήκος του string χωρίς να το ξέρω, και να δημιουργήσει προβλήματα αργότερα, να το έχω υπ' όψην μου.
@@ -333,7 +333,7 @@ struct Regex {
         // τα options του regular expression
         var regexOptions: NSRegularExpression.Options = []
         // Αν θα αγνοεί τους ειδικούς χαρακτήρες για το REGEX και θα θεωρεί το regExText ως κανονικό String.
-        if !searchWithRegexCharacters { regexOptions.insert(.ignoreMetacharacters) }
+        if !regexSearch { regexOptions.insert(.ignoreMetacharacters) }
         // Αν για την αναζήτηση θα υπολογίζονται η διαφορά κεφαλαίων-μικρών ή όχι.
         if !caseSensitive { regexOptions.insert(.caseInsensitive) }
         do {
