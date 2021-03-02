@@ -9,17 +9,17 @@ import SwiftUI
 #if os(macOS)
 public struct TextView: NSViewRepresentable {
     
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
         if !searchText.isEmpty {
-            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
+            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch, searchWithRegexCharacters: false)
         } else {
             self.regexResults = []
         }
     }
     
-    var regexResults: [NSTextCheckingResult]
+    let regexResults: [NSTextCheckingResult]
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
     
@@ -120,17 +120,17 @@ public struct TextView: NSViewRepresentable {
 // MARK: iOS
 public struct TextView: UIViewRepresentable {
     
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
         if !searchText.isEmpty {
-            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: false, searchWithRegexCharacters: false)
+            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch, searchWithRegexCharacters: false)
         } else {
             self.regexResults = []
         }
     }
     
-    var regexResults: [NSTextCheckingResult]
+    let regexResults: [NSTextCheckingResult]
     @Binding var text: String
     @Binding var textViewIsEditing: Bool
     

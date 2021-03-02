@@ -8,7 +8,6 @@
 
 
 Να κάνω:
-- Να επιλέγει ο developer αν θα γίνεται αναζήτηση με case sensitive.
 - Να επιλέγει ο developer αν θα γίνεται αναζήτηση με diacritics sensitive.
 - Να επιλέγει ο developer αν θα γίνεται αναζήτηση με χαρακτήρες regex. Η συνάρτηση regex ήδη το υποστηρίζει.
 - Να επιλέγει ο developer αν θα υποστηρίζει hyperlinks.
