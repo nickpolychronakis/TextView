@@ -67,12 +67,12 @@ public struct TextView: NSViewRepresentable {
                 textView.textStorage?.removeAttribute(NSAttributedString.Key.backgroundColor, range: range)
                 textView.textStorage?.addAttribute(.foregroundColor, value: NSColor.textColor, range: range)
             }
-            textView.string = text
             // Διαπίστωσα ότι δεν χρειάζεται στο macOS αλλαγή του χρώματος (κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode)
 //            textView.textColor = NSColor.textColor
 //            textView.font = NSFont.preferredFont(forTextStyle: .body)
-            if hyperlinkDetection {
-                DispatchQueue.main.async {
+            DispatchQueue.main.async {
+                textView.string = text
+                if hyperlinkDetection {
                     // Επανέλεγχος των hyperlink
                     // Το έβαλα αναγκαστικά στο dispatch καθώς προκαλεί εκτέλεση του textDidBeginEditing του Coordinator, το οποίο σε συνδιασμό με την μεταβλητή που υπάρχει εκεί, η οποία είναι Binding, προκαλεί πρόβλημα επανυπολογισμού του View την στιγμή που ήδη κάνει update, το οποίο έχει άγνωστες συνέπειες.
                     textView.checkTextInDocument(nil)
@@ -112,6 +112,14 @@ public struct TextView: NSViewRepresentable {
             self.parent = parent
         }
         
+        public func textViewDidChangeSelection(_ notification: Notification) {
+            // Με αυτόν τον τρόπο κατευθείαν μόλις ο χρήστης επιλέξει το textView, ενημερώνεται το textViewIsEditing.
+            // Εγινε αναγκαστηκά γιατί το textDidBeginEditing ενεργοποιείται μόνο όταν αρχίσει να γράφει ο χρήστης.
+            if self.parent.textViewIsEditing == false {
+                self.parent.textViewIsEditing = true
+            }
+        }
+        
         public func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             if self.parent.text != textView.string {
@@ -120,7 +128,10 @@ public struct TextView: NSViewRepresentable {
         }
         
         public func textDidBeginEditing(_ notification: Notification) {
-            self.parent.textViewIsEditing = true
+            // Στην πραγματικότητα είναι περιττό καθώς έχει γίνει ήδη ο έλεγχος στο textViewDidChangeSelection, αλλά ένα if έχει ασήμαντη επίπτωση.
+            if self.parent.textViewIsEditing == false {
+                self.parent.textViewIsEditing = true
+            }
         }
         
         public func textDidEndEditing(_ notification: Notification) {
