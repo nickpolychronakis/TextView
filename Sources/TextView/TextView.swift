@@ -9,11 +9,11 @@ import SwiftUI
 #if os(macOS)
 public struct TextView: NSViewRepresentable {
     
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false) {
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
         if !searchText.isEmpty {
-            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch, searchWithRegexCharacters: false)
+            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch, diacriticSensitive: diacriticSensitiveSearch, searchWithRegexCharacters: false)
         } else {
             self.regexResults = []
         }
@@ -120,11 +120,11 @@ public struct TextView: NSViewRepresentable {
 // MARK: iOS
 public struct TextView: UIViewRepresentable {
     
-    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false) {
+    public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String, caseSensitiveSearch: Bool = false, diacriticSensitiveSearch: Bool = false) {
         self._text = text
         self._textViewIsEditing = textViewIsEditing
         if !searchText.isEmpty {
-            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch, searchWithRegexCharacters: false)
+            self.regexResults = Regex.results(regExText: "\(searchText)", targetText: text.wrappedValue, caseSensitive: caseSensitiveSearch,  diacriticSensitive: diacriticSensitiveSearch, searchWithRegexCharacters: false)
         } else {
             self.regexResults = []
         }
@@ -270,13 +270,13 @@ extension UITextView {
 // MARK: REGEX FUNCTION
 // Επιστρέφει τα αποτελέσματα απο την αναζήτηση με regex σε ένα κείμενο.
 struct Regex {
-    static func results(regExText: String, targetText: String, caseSensitive: Bool, searchWithRegexCharacters: Bool) -> [NSTextCheckingResult] {
+    static func results(regExText: String, targetText: String, caseSensitive: Bool, diacriticSensitive: Bool, searchWithRegexCharacters: Bool) -> [NSTextCheckingResult] {
         // Αφαιρώ τα διακριτικά (τόνους) απο το κείμενο.
-        let foldedRegexText = regExText.folding(options: .diacriticInsensitive, locale: .current)
+        let foldedRegexText = diacriticSensitive ? regExText : regExText.folding(options: .diacriticInsensitive, locale: .current)
         // Υπάρχει κίνδυνος να τροποποιεί το μήκος του string χωρίς να το ξέρω, και να δημιουργήσει προβλήματα αργότερα, να το έχω υπ' όψην μου.
         // Αν χρειαστεί να το αφαιρέσω, σε περίπτωση που χρησιμοποιώ το SPM με κάποιο NSPredicate, να αφαιρέσω και απο εκεί το diacritic Insensitive [d]
         guard regExText.utf16.count == foldedRegexText.utf16.count else { fatalError("Πώ ρε φίλε, έπρεπε να είναι ίδια.")}
-        let foldedTargetText = targetText.folding(options: .diacriticInsensitive, locale: .current)
+        let foldedTargetText = diacriticSensitive ? targetText : targetText.folding(options: .diacriticInsensitive, locale: .current)
         // Υπάρχει κίνδυνος να τροποποιεί το μήκος του string χωρίς να το ξέρω, και να δημιουργήσει προβλήματα αργότερα, να το έχω υπ' όψην μου.
         // Αν χρειαστεί να το αφαιρέσω, σε περίπτωση που χρησιμοποιώ το SPM με κάποιο NSPredicate, να αφαιρέσω και απο εκεί το diacritic Insensitive [d]
         guard targetText.utf16.count == foldedTargetText.utf16.count else { fatalError("Πώ ρε φίλε, έπρεπε να είναι ίδια.")}
