@@ -45,6 +45,18 @@ public struct TextView: NSViewRepresentable {
     public func updateNSView(_ scrollView: NSScrollView, context: Context) {
         // Πρέπει οποσδήποτε να είναι το textView του τύπου NSTextView
         let textView = scrollView.documentView as! NSTextView
+        // Δίνει ή πέρνει το firstResponder απο το textView ανάλογα με το textViewIsEditing
+        if let window = textView.window {
+            if textViewIsEditing && window.firstResponder != textView {
+                DispatchQueue.main.async {
+                    window.makeFirstResponder(textView)
+                }
+            } else if !textViewIsEditing && window.firstResponder == textView {
+                DispatchQueue.main.async {
+                    window.makeFirstResponder(nil)
+                }
+            }
+        }
         // Αν έχει άλλάξει το κείμενο προγραμματιστικά μέσω του binding(και όχι αν πληκτρολόγισε ο χρήστης μέσα στο textView), μόνο τότε αλλάζω το κείμενο του textView.
         if textView.string != text {
             // Αφαιρώ όλα τα προηγούμενα yellow background και link attributes
