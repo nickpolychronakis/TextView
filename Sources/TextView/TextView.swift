@@ -42,24 +42,31 @@ public struct TextView: NSViewRepresentable {
     public func updateNSView(_ scrollView: NSScrollView, context: Context) {
         // Πρέπει οποσδήποτε να είναι το textView του τύπου NSTextView
         let textView = scrollView.documentView as! NSTextView
+        // Αν έχει άλλάξει το κείμενο προγραμματιστικά μέσω του binding(και όχι αν πληκτρολόγισε ο χρήστης μέσα στο textView), μόνο τότε αλλάζω το κείμενο του textView.
         if textView.string != text {
-            // Αν έχει άλλάξει το κείμενο προγραμματιστικά μέσω του binding(και όχι αν πληκτρολόγισε ο χρήστης μέσα στο textView), μόνο τότε αλλάζω το κείμενο του textView.
+            // Αφαιρώ όλα τα προηγούμενα yellow background και link attributes
+            textView.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedString().length)) { (attributes, range, pointer) in
+                textView.textStorage?.removeAttribute(NSAttributedString.Key.link, range: range)
+                textView.textStorage?.removeAttribute(NSAttributedString.Key.backgroundColor, range: range)
+                textView.textStorage?.addAttribute(.foregroundColor, value: NSColor.textColor, range: range)
+            }
             textView.string = text
-            // κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode
+            // Διαπίστωσα ότι δεν χρειάζεται στο macOS αλλαγή του χρώματος (κάνω το χρώμα του text να αλλάζει ανάλογα με το darkmode)
 //            textView.textColor = NSColor.textColor
 //            textView.font = NSFont.preferredFont(forTextStyle: .body)
             
-//             FIXME: Ο επανυπολογισμός να γίνεται μόνο όταν είναι απαραίτητο καθώς προκαλεί εκτέλεση του textDidBeginEditing του Coordinator, το οποίο σε συνδιασμό με την μεταβλητή που υπάρχει εκεί, η οποία είναι Binding, πρόβλημα επανυπολογισμού του View την στιγμή που ήδη κάνει update, το οποίο έχει άγνωστες συνέπειες.
-//             Επανέλεγχος των hyperlink
-            textView.checkTextInDocument(nil)
+            DispatchQueue.main.async {
+                // Επανέλεγχος των hyperlink
+                // Το έβαλα αναγκαστικά στο dispatch καθώς προκαλεί εκτέλεση του textDidBeginEditing του Coordinator, το οποίο σε συνδιασμό με την μεταβλητή που υπάρχει εκεί, η οποία είναι Binding, προκαλεί πρόβλημα επανυπολογισμού του View την στιγμή που ήδη κάνει update, το οποίο έχει άγνωστες συνέπειες.
+                textView.checkTextInDocument(nil)
+            }
         } else {
-            // Αφαιρώ όλα τα προηγούμενα attributes
+            // Αφαιρώ όλα τα προηγούμενα yellow background attributes
             textView.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: textView.attributedString().length)) { (attributes, range, pointer) in
                 if (attributes[.backgroundColor] as? NSColor) == NSColor.yellow {
                     textView.textStorage?.removeAttribute(NSAttributedString.Key.backgroundColor, range: range)
                     textView.textStorage?.addAttribute(.foregroundColor, value: NSColor.textColor, range: range)
                 }
-                
             }
         }
         
@@ -95,22 +102,22 @@ public struct TextView: NSViewRepresentable {
         }
         
         public func textDidBeginEditing(_ notification: Notification) {
-            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update. Φταίει το checkTextInDocument μέσα στο updateView. Προς το παρόν όμως δεν δημιουργεί πρόβλημα.
             self.parent.textViewIsEditing = true
         }
         
         public func textDidEndEditing(_ notification: Notification) {
-            // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update. Φταίει το checkTextInDocument μέσα στο updateView. Προς το παρόν όμως δεν δημιουργεί πρόβλημα.
             self.parent.textViewIsEditing = false
-         }
+        }
     }
 }
 
 
 
-// MARK: iOS
-
 #else
+
+
+
+// MARK: iOS
 public struct TextView: UIViewRepresentable {
     
     public init(text: Binding<String>, textViewIsEditing: Binding<Bool>, searchText: String) {
@@ -184,7 +191,6 @@ public struct TextView: UIViewRepresentable {
      
         public func textViewDidChange(_ textView: UITextView) {
             if self.parent.text != textView.text {
-                // FIXME: Εμφανίζει σφάλμα ότι τροποποιώ το view κατά το update. Προς το παρόν όμως δεν δημιουργεί πρόβλημα.
                 self.parent.text = textView.text
             }
         }
