@@ -61,7 +61,6 @@ public struct TextView: NSViewRepresentable {
         
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
         for result in regexResults {
-            // FIXME: Να προσθέτει και μαύρο χρώμα στα font αν δεν είναι link
             textView.textStorage?.addAttributes(yellowAttr, range: result.range)
                 // Δημιουργεί ένα animation όταν βρεθεί το match
                 if textViewIsEditing == false {
@@ -168,7 +167,6 @@ public struct TextView: UIViewRepresentable {
         }
         // Προσθέτω attributes που επιθυμώ ανάλογα με το αποτέλεσμα
         for result in regexResults {
-            // FIXME: Να προσθέτει και μαύρο χρώμα στα font αν δεν είναι link
             textView.textStorage.addAttributes(yellowAttr, range: result.range)
         }
     }
